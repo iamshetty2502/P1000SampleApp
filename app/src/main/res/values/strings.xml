@@ -2,4 +2,9 @@
     <string name="app_name">P1000SampleApp</string>
     <string name="transaction">Transaction</string>
     <string name="print">Print</string>
+    <string name="balance_enquiry">Balance Enquiry</string>
+    <string name="sale_by_card">Sale By Card</string>
+    <string name="cash_withdrawal">Cash Withdrawal</string>
+    <string name="initialise_transaction">Initialise Transaction</string>
+    <string name="void_recent_transaction">Void Recent Transaction</string>
 </resources>

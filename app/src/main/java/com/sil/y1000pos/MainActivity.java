@@ -1,20 +1,18 @@
 package com.sil.y1000pos;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.basewin.services.ServiceManager;
 import com.sil.silp1000sdk.P1000CallBacks;
 import com.sil.silp1000sdk.P1000Manager;
+import com.sil.silp1000sdk.P1000VoidCallBacks;
 import com.sil.silp1000sdk.POJO.P1000Request;
 import com.sil.silp1000sdk.TransactionType;
 
@@ -27,47 +25,58 @@ import java.util.Iterator;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     ProgressDialog progressdialog;
-    Button transactionBtn, printBtn;
+    Button balanceEnquiryBtn, saleByCardBtn, cashWithdrawalBtn, voidTransactionBtn, printBtn;
     String printMessage = "Hello World";
     P1000Manager p1000Manager;
     private static final String TAG = "MainActivity";
+    boolean canBeVoided = false;
+    String transactionId = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        transactionBtn = findViewById(R.id.transaction);
+        balanceEnquiryBtn = findViewById(R.id.balanceEnquiry);
+        saleByCardBtn = findViewById(R.id.saleByCard);
+        cashWithdrawalBtn = findViewById(R.id.cashWithdrawal);
+        voidTransactionBtn = findViewById(R.id.voidTransaction);
         printBtn = findViewById(R.id.printText);
 
         progressdialog = new ProgressDialog(this);
 
-        transactionBtn.setOnClickListener(this);
+        balanceEnquiryBtn.setOnClickListener(this);
+        saleByCardBtn.setOnClickListener(this);
+        cashWithdrawalBtn.setOnClickListener(this);
+        voidTransactionBtn.setOnClickListener(this);
         printBtn.setOnClickListener(this);
 
     }
 
-    void call() {
+    void call(com.sil.silp1000sdk.TransactionType transactionType, String amount) {
 
-        if (progressdialog != null) {
-            progressdialog.setMessage("Initialiasing Transaction");
-            if (!progressdialog.isShowing()) {
-                progressdialog.show();
+        if (p1000Manager == null) {
+            if (progressdialog != null) {
+                progressdialog.setMessage("Initialiasing Transaction");
+                if (!progressdialog.isShowing()) {
+                    progressdialog.show();
+                }
             }
-        }
 
-        p1000Manager = P1000Manager.getInstance(this, "LICENSE-KEY");
+            p1000Manager = P1000Manager.getInstance(this, "9F1A0203569F3602000E5F3401019F37");
+        }
         P1000Request p1000Request = new P1000Request();
         p1000Request.setUsername("USERNAME");
         p1000Request.setPassword("PASSWORD");
         p1000Request.setRefCompany("COMPANYNAME");
-        p1000Request.setMid("MERCHANMT_ID");
+        p1000Request.setMid("MERCHANT_ID");
         p1000Request.setTid("TERMINAL_ID");
-        p1000Request.setTransactionId("TRANSACTION_ID"); //p1000Manager.getTransactionId()
+        transactionId = p1000Manager.getTransactionId(); // You can use your own 12 digit Alphanumeric RRN
+        p1000Request.setTransactionId(transactionId);
         p1000Request.setImei("IMEI");
         p1000Request.setImsi("IMSI");
-        p1000Request.setTxn_amount("AMOUNT");
-        p1000Request.setRequestCode(TransactionType.INQUIRY);
+        p1000Request.setTxn_amount(amount);
+        p1000Request.setRequestCode(transactionType);
         p1000Manager.execute(p1000Request, new P1000CallBacks() {
             @Override
             public void successCallback(JSONObject responseSuccess) {
@@ -126,12 +135,73 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.transaction:
-                call();
+            case R.id.balanceEnquiry:
+                canBeVoided = false;
+                call(TransactionType.INQUIRY, "1");
+                break;
+            case R.id.saleByCard:
+                canBeVoided = true;
+                call(TransactionType.DEBIT, "10");
+                break;
+            case R.id.cashWithdrawal:
+                canBeVoided = false;
+                call(TransactionType.WITHDRAWAL, "100");
+                break;
+            case R.id.voidTransaction:
+                voidTransaction();
                 break;
             case R.id.printText:
                 printText();
                 break;
+        }
+    }
+
+    private void voidTransaction() {
+        if (canBeVoided) {
+            if (transactionId != null) {
+                P1000Request p1000Request = new P1000Request();
+                p1000Request.setUsername("USERNAME");
+                p1000Request.setTxn_amount("TRANSACTION_AMOUNT");
+                p1000Request.setImei("IMEI");
+                p1000Request.setImsi("IMSI");
+                p1000Request.setMid("MERCHANT_ID");
+                p1000Request.setTid("TERMINAL_ID");
+                p1000Request.setTransactionId(transactionId); // Transaction Id of Sale By Card
+                p1000Request.setRefCompany("COMPANYNAME");
+                p1000Request.setPassword("PASSWORD");
+                if (p1000Manager == null) {
+                    if (progressdialog != null) {
+                        progressdialog.setMessage("Initialising Transaction");
+                        if (!progressdialog.isShowing()) {
+                            progressdialog.show();
+                        }
+                    }
+
+                    p1000Manager = P1000Manager.getInstance(this, "9F1A0203569F3602000E5F3401019F37");
+                }
+                p1000Manager.voidTransaction(p1000Request, new P1000VoidCallBacks() {
+                    @Override
+                    public void successCallback(JSONObject responseSuccess) {
+                        Log.d(TAG, "voidTransaction successCallback : " + responseSuccess);
+                        closeProgressDialog("VOID SUCCESS");
+                    }
+
+                    @Override
+                    public void progressCallback(String message) {
+                        Log.d(TAG, "voidTransaction progressCallback: " + message);
+                        updateProcessDialog(message);
+                    }
+
+                    @Override
+                    public void failureCallback(JSONObject responseFailure) {
+                        Log.d(TAG, "voidTransaction failureCallback: " + responseFailure);
+                        closeProgressDialog("VOID FAILED");
+                    }
+                });
+
+            }
+        } else {
+            showToast("Only Sale By Card Transaction can be Voided.");
         }
     }
 
