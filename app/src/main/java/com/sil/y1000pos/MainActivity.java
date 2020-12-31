@@ -177,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                     }
 
-                    p1000Manager = P1000Manager.getInstance(this, "9F1A0203569F3602000E5F3401019F37");
+                    p1000Manager = P1000Manager.getInstance(this, "LICENSE-KEY");
                 }
                 p1000Manager.voidTransaction(p1000Request, new P1000VoidCallBacks() {
                     @Override
