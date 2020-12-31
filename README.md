@@ -17,11 +17,11 @@ This is a sample app for Y1000/P1000 SDK.
   }
   ```
 ### Add the below dependencies in the project's build.gradle 
-    implementation 'com.sil.silp1000sdk:silp1000sdk:1.0.0'
+    implementation 'com.sil.silp1000sdk:silp1000sdk:1.1.1'
 e.g
 ```
     dependencies {
-	 implementation 'com.sil.silp1000sdk:silp1000sdk:1.0.0'
+	 implementation 'com.sil.silp1000sdk:silp1000sdk:1.1.1'
 	}
  ```
 
